@@ -64,7 +64,7 @@ describe('StockDetailsPageComponent', () => {
 
     beforeEach(() => {
       store = fixture.debugElement.injector.get(Store);
-      storeSpy = spyOn(store, <never>'dispatch'); //.and.callThrough();
+      storeSpy = spyOn(store, <never>'dispatch');
       component.tickerSymbol = 'aapl';
       component.stocks = [
         {'name': 'AAPL', 'quote': { 'latestPrice': 100.00 } },
@@ -88,27 +88,29 @@ describe('StockDetailsPageComponent', () => {
   });
 
   describe('sell method', () => {
-    let store,storeSpy;
+    let store, storeSpy;
     const buyStocks = [
       { symbol: 'aapl', units: 20, pricePerUnit: 80.0 },
       { symbol: 'msft', units: 20, pricePerUnit: 60.0 }
     ];
 
     beforeEach(() => {
+      // have to buy stocks before setting up spy (no callThrough)
+      component['store'].dispatch(new BuyAction(buyStocks[0]));
+      component['store'].dispatch(new BuyAction(buyStocks[1]));
+
       store = fixture.debugElement.injector.get(Store);
-      storeSpy = spyOn(store, <never>'dispatch').and.callThrough();
+      storeSpy = spyOn(store, <never>'dispatch');
       component.tickerSymbol = 'aapl';
       component.stocks = [
         {'name': 'AAPL', 'quote': { 'latestPrice': 100.00 } },
         {'name': 'MSFT', 'quote': { 'latestPrice': 90.00 } }
       ];
-      component['store'].dispatch(new BuyAction(buyStocks[0]));
-      component['store'].dispatch(new BuyAction(buyStocks[1]));
     });
 
     it('should sell units of a stock if units valid and enough stocks', () => {
       component['store'].select('portfolio').subscribe((portfolio) => {
-        let id = portfolio.stockItems[0].id;
+        const id = portfolio.stockItems[0].id;
 
         component.sell('10', id);
         expect(storeSpy).toHaveBeenCalledWith(jasmine.any(SellAction));
@@ -119,7 +121,7 @@ describe('StockDetailsPageComponent', () => {
 
     it('should not sell units of a stock if units invalid or not enough stocks', () => {
       component['store'].select('portfolio').subscribe((portfolio) => {
-        let id = portfolio.stockItems[0].id;
+        const id = portfolio.stockItems[0].id;
 
         component.sell('30', id);
         expect(storeSpy).not.toHaveBeenCalledWith(jasmine.any(SellAction));
@@ -143,7 +145,7 @@ describe('StockDetailsPageComponent', () => {
 
     it('should return true if there are enough units of a stock', () => {
       component['store'].select('portfolio').subscribe((portfolio) => {
-        let id = portfolio.stockItems[0].id;
+        const id = portfolio.stockItems[0].id;
         expect(component['enoughStock'](id, 10)).toBeTruthy();
         expect(component['enoughStock'](id, 20)).toBeTruthy();
       });
@@ -151,7 +153,7 @@ describe('StockDetailsPageComponent', () => {
 
     it('should return false if there are not enough units of a stock', () => {
       component['store'].select('portfolio').subscribe((portfolio) => {
-        let id = portfolio.stockItems[0].id;
+        const id = portfolio.stockItems[0].id;
         expect(component['enoughStock']('300', 10)).not.toBeTruthy();
         expect(component['enoughStock'](id, 30)).not.toBeTruthy();
         expect(component['enoughStock']('300', 30)).not.toBeTruthy();
@@ -160,7 +162,7 @@ describe('StockDetailsPageComponent', () => {
 
     it('should return false if inputs are incorrect', () => {
       component['store'].select('portfolio').subscribe((portfolio) => {
-        let id = portfolio.stockItems[0].id;
+        const id = portfolio.stockItems[0].id;
         expect(component['enoughStock']('300', NaN)).not.toBeTruthy();
         expect(component['enoughStock'](null, 30)).not.toBeTruthy();
       });
