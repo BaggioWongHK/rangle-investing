@@ -1,7 +1,9 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ActivatedRoute } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
+import { of } from 'rxjs/observable/of';
+import { Subscription } from 'rxjs/Subscription';
 
 import { StockDetailsPageComponent } from './stock-details-page.component';
 import { StoreModule } from '@ngrx/store';
@@ -21,9 +23,9 @@ describe('StockDetailsPageComponent', () => {
         RouterTestingModule,
       ],
       declarations: [ StockDetailsPageComponent ],
-      providers: [ 
+      providers: [
         Store,
-        { provide: ActivatedRoute, useValue: { params: Observable.of({tickerSymbol: 'aapl'}) } }
+        { provide: ActivatedRoute, useValue: { params: of({tickerSymbol: 'aapl'}) } }
       ]
     })
     .compileComponents();
@@ -42,6 +44,12 @@ describe('StockDetailsPageComponent', () => {
   describe('isThisStock method', () => {
     it('should return a function', () => {
       expect(component.isThisStock('AAPL')).toEqual(jasmine.any(Function));
+    });
+  });
+
+  describe('buyInputValidator method', () => {
+    it('should return a subscription', () => {
+      expect(component.buyInputValidator()).toEqual(jasmine.any(Subscription));
     });
   });
 
@@ -79,6 +87,28 @@ describe('StockDetailsPageComponent', () => {
     });
   });
 
+  describe('isInteger method', () => {
+    it('should return true if integer', () => {
+      expect(component.isInteger('10500')).toBeTruthy();
+    });
+
+    it('should return false if decimal', () => {
+      expect(component.isInteger('10500.00')).toBeFalsy();
+    });
+
+    it('should return false if there are spaces', () => {
+      expect(component.isInteger('10500 ')).toBeFalsy();
+    });
+
+    it('should return false if there are dollar signs', () => {
+      expect(component.isInteger('$10500')).toBeFalsy();
+    });
+
+    it('should return false if there are non number digits', () => {
+      expect(component.isInteger('Apples!')).toBeFalsy();
+    });
+  });
+
   describe('buy method', () => {
     let store, storeSpy;
 
@@ -97,9 +127,9 @@ describe('StockDetailsPageComponent', () => {
       expect(storeSpy).toHaveBeenCalled();
     });
 
-    it('should buy units of a stock if units valid (floating point value)', () => {
-      component.buy('10000.01');
-      expect(storeSpy).toHaveBeenCalled();
+    it('should return (undefined) if units invalid (floating point value)', () => {
+      const result = component.buy('10000.01');
+      expect(result).toBeUndefined();
     });
 
     it('should not buy units of a stock if units invalid (NaN)', () => {
@@ -127,13 +157,18 @@ describe('StockDetailsPageComponent', () => {
       // have to buy stocks before setting up spy (no callThrough)
       store.dispatch(new BuyAction(buyStocks[0]));
       store.dispatch(new BuyAction(buyStocks[1]));
-      
+
       storeSpy = spyOn(store, <never>'dispatch');
       component.tickerSymbol = 'aapl';
       component.stocks = [
         {'name': 'AAPL', 'quote': { 'latestPrice': 100.00 } },
         {'name': 'MSFT', 'quote': { 'latestPrice': 90.00 } }
       ];
+    });
+
+    it('should return (undefined) if units invalid (floating point value)', () => {
+      const result = component.sell('10000.01', '100');
+      expect(result).toBeUndefined();
     });
 
     it('should sell units of a stock if units valid and enough stocks (target units < stocks held)', () => {
@@ -181,7 +216,7 @@ describe('StockDetailsPageComponent', () => {
     let store;
     // for mock selling below, pretend AAPL stocks are checked (portfolio.stockItems[0])
     const stocks = [
-      { symbol: 'aapl', units: 20, pricePerUnit: 80.0 }, 
+      { symbol: 'aapl', units: 20, pricePerUnit: 80.0 },
       { symbol: 'msft', units: 20, pricePerUnit: 60.0 }
     ];
 

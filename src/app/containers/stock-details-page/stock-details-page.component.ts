@@ -1,7 +1,10 @@
-import { Component, OnInit, Input, OnDestroy } from '@angular/core';
+import { Component, OnInit, Input, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs/Subscription';
 import { Store } from '@ngrx/store';
+import { Observable } from 'rxjs/Observable';
+import { fromEvent } from 'rxjs/observable/fromEvent';
+import { map } from 'rxjs/operators/map';
 import { AppState } from '../../store';
 import { BuyAction, SellAction, PortfolioPayload } from '../../store/actions/portfolio';
 import { PortfolioTransaction, PortfolioStockItem } from '../../store/reducers/portfolio';
@@ -12,6 +15,7 @@ import { PortfolioTransaction, PortfolioStockItem } from '../../store/reducers/p
   styleUrls: ['./stock-details-page.component.css']
 })
 export class StockDetailsPageComponent implements OnInit, OnDestroy {
+  @ViewChild('purchaseUnits') buyInput: ElementRef;
   private subscriptions: Subscription[] = [];
   tickerSymbol: string;
   stock: any; // current stock
@@ -31,7 +35,8 @@ export class StockDetailsPageComponent implements OnInit, OnDestroy {
 
   /**
    *  @param {string} upperTickerSymbol This component's ticker symbol in upper case (retrieved from router params).
-   *  @description Check if stock name matches the ticker symbol (upper case). Called 'isThisStock' because we want to check if the provided stock matches the tickerSymbol of the component.
+   *  @description Check if stock name matches the ticker symbol (upper case). Called 'isThisStock' because we want to
+   check if the provided stock matches the tickerSymbol of the component.
    *  @return {Function} Function signature of callback in Array.prototype.find(callback) / Array.prototype.findIndex(callback).
    */
   isThisStock(upperTickerSymbol: string) {
@@ -61,14 +66,14 @@ export class StockDetailsPageComponent implements OnInit, OnDestroy {
       this.tickerSymbol = params['tickerSymbol'];
       const upperTickerSymbol = this.tickerSymbol.toUpperCase();
 
-      // prevent direct navigation with non existent symbol
-      if (!this.stockExists(this.tickerSymbol)) {
-        this.route.navigate(['']);
-      }
-
       const subscriptionStocks = this.store.select('stocks').subscribe(stocks => {
         this.stocks = stocks;
         this.stock = stocks.find(this.isThisStock(upperTickerSymbol));
+
+        // prevent direct navigation with non existent symbol
+        if (!this.stockExists(this.tickerSymbol)) {
+          this.route.navigate(['']); // placed in subscription block because stocks needs to be populated
+        }
       });
 
       const subscriptionPortfolio = this.store.select('portfolio').subscribe(portfolio => {
@@ -84,7 +89,9 @@ export class StockDetailsPageComponent implements OnInit, OnDestroy {
       this.subscriptions.push(subscriptionPortfolio, subscriptionStocks);
     });
 
-    this.subscriptions.push(subscriptionParams);
+    const subscriptionBuyForm = this.buyInputValidator();
+
+    this.subscriptions.push(subscriptionParams, subscriptionBuyForm);
   }
 
   /**
@@ -99,10 +106,34 @@ export class StockDetailsPageComponent implements OnInit, OnDestroy {
   }
 
   /**
+   *  @description Prevents user from entering non-digit input. (Things like punctuation, letters are deleted from input.)
+   */
+  buyInputValidator(): Subscription {
+    const emitter = fromEvent(this.buyInput.nativeElement, 'input').pipe(map(value => value));
+    const subscriber = emitter.subscribe(event => {
+      const oneDigitRegex = new RegExp(/^\d{1}$/);
+      if (!oneDigitRegex.test((event as any).data)) {
+        const currVal = this.buyInput.nativeElement.value;
+        this.buyInput.nativeElement.value = currVal.slice(0, -1);
+      }
+    });
+
+    return subscriber;
+  }
+
+  isInteger(input: string) {
+    const intRegex = new RegExp(/^\d+$/);
+    return intRegex.test(input);
+  }
+
+  /**
    *  @param {string} units Number of units of stock user wants to buy.
    *  @description If purchase units is an integer, dispatch buy action. Otherwise shows error message (invalid input).
    */
   buy(units: string): void {
+    if (!this.isInteger(units)) { // if input has a decimal, this catches it
+      return;
+    }
     const iUnits = parseInt(units, 10);
     const upperTickerSymbol = this.tickerSymbol.toUpperCase();
 
@@ -146,6 +177,9 @@ export class StockDetailsPageComponent implements OnInit, OnDestroy {
   @description Checks that units is valid and user holds enough of that stock, and dispatches sell action.
    */
   sell(units: string, id: string): void {
+    if (!this.isInteger(units)) { // if input has a decimal, this catches it
+      return;
+    }
     const iUnits = parseInt(units, 10);
     const upperTickerSymbol = this.tickerSymbol.toUpperCase();
 
