@@ -30,12 +30,22 @@ export class StockDetailsPageComponent implements OnInit, OnDestroy {
     ) { }
 
   /**
+   *  @param {string} upperTickerSymbol This component's ticker symbol in upper case (retrieved from router params).
+   *  @description Check if stock name matches the ticker symbol (upper case). Called 'isThisStock' because we want to check if the provided stock matches the tickerSymbol of the component.
+   *  @return {Function} Function signature of callback in Array.prototype.find(callback) / Array.prototype.findIndex(callback).
+   */
+  isThisStock(upperTickerSymbol: string) {
+    return stock => stock.name === upperTickerSymbol;
+  }
+
+  /**
    *  @param {string} tickerSymbol
    *  @description See if stock exists in stocks array.
    */
   stockExists(tickerSymbol: string): Boolean {
     if (tickerSymbol) {
-      const stockIndex = this.stocks.findIndex(stock => stock.name === tickerSymbol.toUpperCase());
+      const upperTickerSymbol = tickerSymbol.toUpperCase();
+      const stockIndex = this.stocks.findIndex(this.isThisStock(upperTickerSymbol));
 
       return (stockIndex === -1) ? false : true;
     }
@@ -49,6 +59,7 @@ export class StockDetailsPageComponent implements OnInit, OnDestroy {
   ngOnInit() {
     const subscriptionParams = this.activatedRoute.params.subscribe(params => {
       this.tickerSymbol = params['tickerSymbol'];
+      const upperTickerSymbol = this.tickerSymbol.toUpperCase();
 
       // prevent direct navigation with non existent symbol
       if (!this.stockExists(this.tickerSymbol)) {
@@ -57,7 +68,7 @@ export class StockDetailsPageComponent implements OnInit, OnDestroy {
 
       const subscriptionStocks = this.store.select('stocks').subscribe(stocks => {
         this.stocks = stocks;
-        this.stock = stocks.find(stock => stock.name === this.tickerSymbol.toUpperCase());
+        this.stock = stocks.find(this.isThisStock(upperTickerSymbol));
       });
 
       const subscriptionPortfolio = this.store.select('portfolio').subscribe(portfolio => {
@@ -97,7 +108,7 @@ export class StockDetailsPageComponent implements OnInit, OnDestroy {
 
     if (Number.isFinite(iUnits)) {
       this.showBuyError = false;
-      const currentStockData = this.stocks.find(stock => stock.name === upperTickerSymbol);
+      const currentStockData = this.stocks.find(this.isThisStock(upperTickerSymbol));
 
       if (currentStockData && currentStockData.quote) {
         const stock = {
@@ -143,7 +154,7 @@ export class StockDetailsPageComponent implements OnInit, OnDestroy {
         stockId: id,
         symbol: upperTickerSymbol,
         units: iUnits,
-        pricePerUnit: this.stocks.find(currentStock => currentStock.name === upperTickerSymbol).latestPrice
+        pricePerUnit: this.stocks.find(this.isThisStock(upperTickerSymbol)).latestPrice
       };
 
       this.store.dispatch(new SellAction(stock));

@@ -1,5 +1,7 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
+import { ActivatedRoute } from '@angular/router';
+import { Observable } from 'rxjs';
 
 import { StockDetailsPageComponent } from './stock-details-page.component';
 import { StoreModule } from '@ngrx/store';
@@ -19,7 +21,10 @@ describe('StockDetailsPageComponent', () => {
         RouterTestingModule,
       ],
       declarations: [ StockDetailsPageComponent ],
-      providers: [ Store ]
+      providers: [ 
+        Store,
+        { provide: ActivatedRoute, useValue: { params: Observable.of({tickerSymbol: 'aapl'}) } }
+      ]
     })
     .compileComponents();
   }));
@@ -32,6 +37,12 @@ describe('StockDetailsPageComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  describe('isThisStock method', () => {
+    it('should return a function', () => {
+      expect(component.isThisStock('AAPL')).toEqual(jasmine.any(Function));
+    });
   });
 
   describe('stockExists method', () => {
