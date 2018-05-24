@@ -249,35 +249,35 @@ describe('StockDetailsPageComponent', () => {
     it('should return false if id incorrect', () => {
       store.select('portfolio').subscribe((portfolio) => {
         const id = portfolio.stockItems[0].id;
-        expect(component.enoughStock('300', 10)).not.toBeTruthy();
+        expect(component.enoughStock('300', 10)).toBeFalsy();
       });
     });
 
     it('should return false if there are not enough units of a stock', () => {
       store.select('portfolio').subscribe((portfolio) => {
         const id = portfolio.stockItems[0].id;
-        expect(component.enoughStock(id, 30)).not.toBeTruthy();
+        expect(component.enoughStock(id, 30)).toBeFalsy();
       });
     });
 
     it('should return false if id incorrect and there are not enough units of a stock', () => {
       store.select('portfolio').subscribe((portfolio) => {
         const id = portfolio.stockItems[0].id;
-        expect(component.enoughStock('300', 30)).not.toBeTruthy();
+        expect(component.enoughStock('300', 30)).toBeFalsy();
       });
     });
 
     it('should return false if inputs are incorrect (id is incorrect, units NaN)', () => {
       store.select('portfolio').subscribe((portfolio) => {
         const id = portfolio.stockItems[0].id;
-        expect(component.enoughStock('300', NaN)).not.toBeTruthy();
+        expect(component.enoughStock('300', NaN)).toBeFalsy();
       });
     });
 
     it('should return false if inputs are incorrect (id null, target units > stocks held)', () => {
       store.select('portfolio').subscribe((portfolio) => {
         const id = portfolio.stockItems[0].id;
-        expect(component.enoughStock(null, 30)).not.toBeTruthy();
+        expect(component.enoughStock(null, 30)).toBeFalsy();
       });
     });
   });
