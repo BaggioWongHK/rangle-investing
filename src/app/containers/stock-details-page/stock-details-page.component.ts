@@ -33,7 +33,7 @@ export class StockDetailsPageComponent implements OnInit, OnDestroy {
    *  @param {string} tickerSymbol
    *  @description See if stock exists in stocks array.
    */
-  private stockExists(tickerSymbol: string): Boolean {
+  stockExists(tickerSymbol: string): Boolean {
     if (tickerSymbol) {
       const stockIndex = this.stocks.findIndex(stock => stock.name === tickerSymbol.toUpperCase());
 
@@ -120,7 +120,7 @@ export class StockDetailsPageComponent implements OnInit, OnDestroy {
    @description Checks if user has enough units of stock to sell. This only checks for stocks under the provided id,
    which means that other transactions made for the same stock will be ignored.
    */
-  private enoughStock(id: string, targetUnits: number): Boolean {
+  enoughStock(id: string, targetUnits: number): Boolean {
     if (this.portfolio.stockItems) {
        const stocksInHolding: PortfolioStockItem = this.portfolio.stockItems.find(stockItem => stockItem.id === id);
 
